@@ -1,5 +1,7 @@
 import sys
 import re
+import requests
+import hashlib
 
 def has_repetition(password):
     for i in range(len(password) - 3):
@@ -34,6 +36,20 @@ def has_keyboard_walk(password):
                 return True
     return False
 
+def is_breached(password):
+    sha1_hash = hashlib.sha1(password.encode()).hexdigest().upper()
+    prefix, suffix = sha1_hash[:5], sha1_hash[5:]
+    try:
+        response = requests.get(f"https://api.pwnedpasswords.com/range/{prefix}")
+        if response.status_code == 200:
+            return suffix in response.text
+        else:
+            print("⚠️ Failed to check password breach. API may be unavailable.")
+            return False
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error checking password breach: {e}")
+        return False
+
 def basic_rules(password):
     if len(password) < 12:
         return "Too short(min 12 characters)"
@@ -60,9 +76,14 @@ def basic_rules(password):
     if has_keyboard_walk(password):
         return "Password contains a keyboard walk"
     
+    if is_breached(password):
+        return "Password has been breached (found in public data leaks)"
+
+    return None
+    
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python password_checker.py <password>")
+        print("Usage: python password_checker.py "<password>"")
         sys.exit(1)
     
     password = sys.argv[1]
