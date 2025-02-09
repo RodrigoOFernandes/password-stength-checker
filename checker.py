@@ -61,11 +61,6 @@ def basic_rules(password):
     
     if not (has_upper and has_lower and has_digit and has_symbol):
         return "Must include a combination of uppercase, lowercase, numbers, and symbols"
-    
-    with open('top10000common.txt') as f:
-        common_passwords = [line.strip() for line in f]
-        if password in common_passwords:
-            return "Too common"
         
     if has_repetition(password):
         return "Password contains repeated characters"
