@@ -78,7 +78,6 @@ def calculate_score(password):
     elif entropy > 20:
         score += 1
     
-    # Penalties
     if has_repetition(password):
         score -= 2
     if has_sequence(password):
