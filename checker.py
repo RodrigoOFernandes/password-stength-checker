@@ -1,8 +1,13 @@
 import sys
 import re
+import pandas as pd
 import requests
 import hashlib
 import math 
+import joblib
+from utils import extract_features, has_sequence, has_keyboard_walk
+
+model = joblib.load("password_strength_model.pkl")
 
 def calculate_entropy(password):
     charset_size = 0
@@ -21,30 +26,6 @@ def calculate_entropy(password):
 def has_repetition(password):
     return any(password[i] == password[i+1] == password[i+2] == password[i+3] for i in range(len(password) - 3))
 
-def has_sequence(password):
-    sequences = [
-        "abcdefghijklmnopqrstuvwxyz", "zyxwvutsrqponmlkjihgfedcba",  
-        "0123456789", "9876543210"
-    ]
-    password_lower = password.lower()
-    
-    for seq in sequences:
-        for i in range(len(seq) - 3):
-            if seq[i:i+4] in password_lower:
-                return True
-    return False
-
-def has_keyboard_walk(password):
-    keyboard_rows = ["qwertyuiop", "asdfghjkl", "zxcvbnm", "1234567890"]
-    password_lower = password.lower()
-    
-    for row in keyboard_rows:
-        for i in range(len(row) - 3):
-            sequence = row[i:i+4]
-            if sequence in password_lower or sequence[::-1] in password_lower:
-                return True
-    return False
-
 def is_breached(password):
     sha1_hash = hashlib.sha1(password.encode()).hexdigest().upper()
     prefix, suffix = sha1_hash[:5], sha1_hash[5:]
@@ -56,6 +37,7 @@ def is_breached(password):
         pass  
     return False
 
+'''
 def calculate_score(password):
     if is_breached(password):
         return 0  
@@ -86,11 +68,28 @@ def calculate_score(password):
         score -= 2
     
     return max(score, 0)  
+'''
+''''''
+def calculate_score(password):
+    features = extract_features(password)
+    features_df = pd.DataFrame([features])
+    strength = model.predict(features_df)[0]
+    return strength
 
+'''
 def classify_password(score):
     if score >= 8:
         return "Strong"
     elif score >= 5:
+        return "Medium"
+    else:
+        return "Weak"
+'''
+
+def classify_password(strength):
+    if strength == 2:
+        return "Strong"
+    elif strength == 1:
         return "Medium"
     else:
         return "Weak"
